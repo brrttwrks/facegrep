@@ -47,7 +47,7 @@ facegrep entity add path/to/image.png -t occrp
 facegrep entity list
 ```
 
-This returns JSONL new-line delimited objects you fan to things with. Like use with jq.
+This returns JSONL new-line delimited objects you can do things with. Like use with jq.
 
 ### Search an image for matches against your pgvector database
 
@@ -88,3 +88,18 @@ This can take a while depending on the dataset. You can increase the number of w
 ```sh
 facegrep aleph crawl <foreign_id> --workers 4
 ```
+
+### Export report records
+
+```sh
+facegrep report export -r <report_id> -o json
+```
+
+This outputs JSONL new-line delimited JSON record objects. This is the default and the -o json is optional.
+
+```sh
+facebook report export -r 42 -o neo4j
+```
+
+This will write the matched person and the source as nodes and the relationship between them as an edge. On a good day, this will enable you to see if someone is related to another person directly or indirectly via other people in images. You'll kneed to add set the env variables to connect to your neo4j database, as described in the settings.py file.
+
