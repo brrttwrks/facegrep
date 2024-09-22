@@ -86,7 +86,7 @@ facegrep aleph search <entity_id>
 This can take a while depending on the dataset. You can increase the number of workers accordingly.
 
 ```sh
-facegrep aleph crawl <foreign_id> --workers 4
+facegrep aleph crawl -f <foreign_id> --workers 4
 ```
 
 ### Export report records
@@ -98,7 +98,7 @@ facegrep report export -r <report_id> -o json
 This outputs JSONL new-line delimited JSON record objects. This is the default and the -o json is optional.
 
 ```sh
-facebook report export -r 42 -o neo4j
+facegrep report export -r 42 -o neo4j
 ```
 
 This will write the matched person and the source as nodes and the relationship between them as an edge. On a good day, this will enable you to see if someone is related to another person directly or indirectly via other people in images. You'll kneed to add set the env variables to connect to your neo4j database, as described in the settings.py file.
