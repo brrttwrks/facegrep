@@ -1,0 +1,28 @@
+services:
+  pg:
+    container_name: pgvector-server
+    image: pgvector:latest
+    ports:
+     - 127.0.0.1:5432:5432
+    environment:
+     - POSTGRES_PASSWORD=password
+     - PGDATA=/var/lib/postgresql/data/pgdata
+     - POSTGRES_DB=facegrep
+    hostname: pgvector
+    volumes:
+     - ./pgdata:/var/lib/postgresql/data/pgdata
+  n4:
+    container_name: neo4j-server
+    image: neo4j:latest
+    ports:
+      - 127.0.0.1:7687:7687
+      - 127.0.0.1:7474:7474
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_dbms_memory_pagecache_size=4G
+    hostname: neo4j
+    volumes:
+      - ./n4jdata:/data
+      - ./n4jlogs:/logs
+      - ./n4jimport:/var/lib/neo4j/import
+      - ./n4jplugins:/plugins

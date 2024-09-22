@@ -1,0 +1,7 @@
+.venv/
+data/
+**/*.egg-info
+**/__pycache__/
+docker/pgdata/
+docker/n4jdata/
+docker/n4jlogs/
