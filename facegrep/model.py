@@ -21,6 +21,7 @@ class Tag:
         self.entity_id = entity_id
         self.name = name
 
+
     @classmethod
     def init_database(cls):
         sql = """
@@ -35,6 +36,7 @@ class Tag:
         with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 cur.execute(sql)
+
 
     def store(self):
         sql = """
@@ -59,10 +61,12 @@ class Entity:
         self.store()
         self.add_tags(tag)
 
+
     def add_embedding(self, embedding):
         embedding = Embedding(self.id, embedding)
         embedding.store()
         self.embeddings.append(embedding)
+
 
     @classmethod
     def get_entity_by_id(cls, entity_id):
@@ -77,6 +81,7 @@ class Entity:
                 record = cur.execute(sql, sql_data).fetchone()
         entity = cls__init__(record["id"], record["name"])
         return entity
+
 
     @classmethod
     def get_entities(cls):
@@ -124,6 +129,7 @@ class Entity:
     def __repr__(self):
         return f"Entity(\"{self.name}\", \"tags\": \"[{','.join([t.name for t in self.tags])}]\")"
 
+
     @classmethod
     def init_database(cls):
         sql = """
@@ -143,6 +149,7 @@ class Embedding:
     def __init__(self, entity_id, embedding):
         self.entity_id = entity_id
         self.embedding = embedding
+
 
     @classmethod
     def init_database(cls):
@@ -207,12 +214,15 @@ def get_cos_distance(embedding, tags, threshold=0.3):
                 rows = cur.execute(sql_notag, sql_data_notag).fetchall()
     return rows
 
+
 class Record:
-    def __init__(self, file_path, source, name, cosine_similarity):
+    def __init__(self, report_id, file_path, source, name, cosine_similarity):
+        self.report_id = report_id
         self.file_path = file_path
         self.source = source
         self.name = name
         self.cosine_similarity = cosine_similarity
+
 
     @classmethod
     def init_database(cls):
@@ -232,6 +242,27 @@ class Record:
             with conn.cursor() as cur:
                 cur.execute(sql)
 
+
+    def store(self):
+        sql = """
+              INSERT INTO records
+              (report_id, file_path, source, name, cosine_similarity)
+              VALUES (%s, %s, %s, %s, %s)
+              ON CONFLICT (report_id, file_path, source, name, cosine_similarity)
+              DO UPDATE
+              SET name = EXCLUDED.name
+              RETURNING *;
+              """
+        sql_data = (
+            self.report_id,
+            self.file_path,
+            self.source,
+            self.name,
+            self.cosine_similarity
+        )
+        with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(sql, sql_data)
 
     def __str__(self):
         return f"Record(\"{self.file_path}\", \"{self.source}\", \"{self.name}\", \"{self.cosine_similarity}\")"
@@ -258,7 +289,6 @@ class Report:
         return txt
 
 
-
     def store(self, name, tags, report_type, record_count):
         sql = """
               INSERT INTO reports (name, tags, type, record_count) VALUES (%s, %s, %s, %s)
@@ -269,6 +299,7 @@ class Report:
             with conn.cursor(row_factory=dict_row) as cur:
                 report = cur.execute(sql, sql_data).fetchone()
         return report
+
 
     def update_record_count(self):
         sql = """
@@ -282,26 +313,8 @@ class Report:
                 cur.execute(sql, sql_data)
 
 
-    def store_records(self):
-        sql = """
-              INSERT INTO records
-              (report_id, file_path, source, name, cosine_similarity)
-              VALUES (%s, %s, %s, %s, %s)
-              ON CONFLICT (report_id, file_path, source, name, cosine_similarity)
-              DO UPDATE
-              SET name = EXCLUDED.name
-              RETURNING *;
-              """
-        values = []
-        for r in self.records:
-           values.append((self.id, r.file_path, r.source, r.name, r.cosine_similarity))
-        with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
-            with conn.cursor(row_factory=dict_row) as cur:
-                cur.executemany(sql, values)
-        self.update_record_count()
-
-
     def add(self, record):
+        record.store()
         self.records.append(record)
         self.record_count += 1
 

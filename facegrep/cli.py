@@ -45,9 +45,10 @@ def search(entity_id, tag):
 @aleph.command()
 @click.option("--foreign_id", "-f", required=True)
 @click.option('--tag', '-t', multiple=True)
-def crawl(foreign_id, tag):
+@click.option('--workers', '-w', default=1)
+def crawl(foreign_id, tag, workers):
     report = Report(foreign_id, tag, ReportType.AlephCrawl)
-    aleph_crawl(report)
+    aleph_crawl(report, tag, workers)
 
 
 @entity.command()

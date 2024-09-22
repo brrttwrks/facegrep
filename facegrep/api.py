@@ -1,7 +1,6 @@
 from pathlib import Path
 import json
 import multiprocessing as mp
-from .settings import FACEGREP_WORKER_COUNT
 from .model import (
     Report,
     Record,
@@ -62,9 +61,9 @@ def entity_search(report, file_path, source):
         for embedding in embeddings:
             entities = get_cos_distance(embedding["embedding"], report.tags)
             if len(entities) >= 1:
-                cache = []
                 for entity in entities:
                     record = Record(
+                        report.id,
                         str(file_path),
                         source,
                         entity["name"],
@@ -76,8 +75,7 @@ def entity_search(report, file_path, source):
     except ValueError as e:
         print(f"Error processing source: {source}")
     finally:
-        report.store_records()
-        print(report)
+        report.update_record_count()
 
 
 def download_file(url, file_name):
@@ -112,11 +110,11 @@ def aleph_search(report, entity_id):
     entity_search(report, file_path, entity_id)
 
 
-def aleph_crawl(report):
+def aleph_crawl(report, tag, worker_count):
     queue = mp.Queue()
 
     workers = []
-    for w in range(FACEGREP_WORKER_COUNT):
+    for w in range(worker_count):
         p = mp.Process(
             name = f"worker_{w}",
             target = worker,
@@ -142,7 +140,7 @@ def aleph_crawl(report):
     except AlephException as e:
         raise Exception("Aleph stream failed")
     else:
-        [queue.put("EOL") for _ in range(FACEGREP_WORKER_COUNT)]
+        [queue.put("EOL") for _ in range(worker_count)]
         [w.join() for w in workers]
 
 

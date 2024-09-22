@@ -11,9 +11,14 @@ setuptools.setup(
         "facegrep.settings",
     ],
     install_requires=[
+        "tf-keras",
         "Click",
         "psycopg[binary]",
-        "opencv-python",
+        "neo4j",
+        "deepface",
+        "alephclient",
+        "followthemoney",
+        "requests",
     ],
     entry_points={
         'console_scripts': [
