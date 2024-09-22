@@ -15,6 +15,7 @@ from deepface import DeepFace
 from alephclient.api import AlephAPI
 from alephclient.errors import AlephException
 import requests
+import click
 
 
 api = AlephAPI()
@@ -76,6 +77,7 @@ def entity_search(report, file_path, source):
         print(f"Error processing source: {source}")
     finally:
         report.update_record_count()
+        click.echo(report.id)
 
 
 def download_file(url, file_name):
@@ -88,7 +90,7 @@ def download_file(url, file_name):
 
 
 def worker(queue):
-    print(f"Initiating aleph crawl worker: {mp.current_process().name}")
+    click.echo(f"Initiating aleph crawl worker: {mp.current_process().name}")
     while True:
         item = queue.get()
 
@@ -132,7 +134,7 @@ def aleph_crawl(report, tag, worker_count):
         )):
 
             if idx % 1_000 == 0 and idx != 0:
-                print(f"Enqueued batch: {idx} ...")
+                click.echo(f"Enqueued batch: {idx} ...")
 
             queue.put((report, entity["id"]))
 
@@ -147,13 +149,13 @@ def aleph_crawl(report, tag, worker_count):
 def entity_list():
     for entity in Entity.get_entities():
         entity["created_at"] = entity["created_at"].strftime("%Y-%m-%d")
-        print(json.dumps(entity))
+        click.echo(json.dumps(entity))
 
 
 def report_list():
     for report in Report.get_reports():
         report["created_at"] = report["created_at"].strftime("%Y-%m-%d")
-        print(json.dumps(report))
+        click.echo(json.dumps(report))
 
 
 def report_export(report_id, output_format):
@@ -180,6 +182,6 @@ def report_export(report_id, output_format):
             neo4jdb.execute_query(match, database_="neo4j")
 
         else:
-            print(json.dumps(record))
+            click.echo(json.dumps(record))
 
     neo4jdb.close()
