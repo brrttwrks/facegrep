@@ -19,11 +19,11 @@ class Neo4j:
 class Tag:
     """
     Tags are stored in a Postgres table.
-    A tag has a name and a reference to an entity.
-    An entity can have multiple tags, but they must be unique within the entity.
+    A tag has a name, a timestamp, and a reference to a person.
+    a person can have multiple tags, but they must be unique within the person.
     """
-    def __init__(self, entity_id, name):
-        self.entity_id = entity_id
+    def __init__(self, person_id, name):
+        self.person_id = person_id
         self.name = name
 
 
@@ -32,10 +32,10 @@ class Tag:
         sql = """
               CREATE TABLE IF NOT EXISTS tags (
                   id BIGSERIAL PRIMARY KEY,
-                  entity_id BIGSERIAL NOT NULL REFERENCES entities (id),
+                  person_id BIGSERIAL NOT NULL REFERENCES persons (id),
                   name TEXT NOT NULL,
                   created_at TIMESTAMP DEFAULT NOW(),
-                  UNIQUE (entity_id, name)
+                  UNIQUE (person_id, name)
               );
               """
         with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
@@ -46,21 +46,21 @@ class Tag:
     def store(self):
         """Stores a tag in the database, if it doesn't already exist"""
         sql = """
-              INSERT INTO tags (entity_id, name) VALUES (%s, %s);
+              INSERT INTO tags (person_id, name) VALUES (%s, %s);
               """
-        sql_data = (self.entity_id, self.name)
+        sql_data = (self.person_id, self.name)
         with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 try:
                     cur.execute(sql, sql_data)
                 except psycopg.errors.UniqueViolation as e:
-                    print(f"Tag already exists for entity: {self.name}")
+                    print(f"Tag already exists for person: {self.name}")
 
 
-class Entity:
+class Person:
     """
-    Entities are stored in a Postgres table.
-    An entity has a name and a list of embeddings.
+    Persons are stored in a Postgres table.
+    a person has a name and a list of embeddings.
     """
     def __init__(self, name, tag, id=None ):
         self.id = id
@@ -79,31 +79,31 @@ class Entity:
 
 
     @classmethod
-    def get_entity_by_id(cls, entity_id):
+    def get_person_by_id(cls, person_id):
         sql = """
                    SELECT *
-                   FROM entities
+                   FROM persons
                    WHERE id = {};
                    """
-        sql_data = (entity_id,)
+        sql_data = (person_id,)
         with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 record = cur.execute(sql, sql_data).fetchone()
-        entity = cls.__init__(record["id"], record["name"])
-        return entity
+        person = cls.__init__(record["id"], record["name"])
+        return person
 
 
     @classmethod
-    def get_entities(cls):
+    def get_persons(cls):
         sql = """
-              SELECT entities.id,
+              SELECT persons.id,
                      name,
                      created_at,
                      COUNT(name) AS embeddings_count
               FROM embeddings
-              RIGHT JOIN entities
-              ON embeddings.entity_id = entities.id
-              GROUP BY entities.id, name, created_at
+              RIGHT JOIN persons
+              ON embeddings.person_id = persons.id
+              GROUP BY persons.id, name, created_at
               ORDER BY name ASC;
               """
         with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
@@ -115,7 +115,7 @@ class Entity:
 
     def store(self):
         sql = """
-              INSERT INTO entities (name) VALUES (%s)
+              INSERT INTO persons (name) VALUES (%s)
               ON CONFLICT (name)
               DO UPDATE
               SET name = EXCLUDED.name
@@ -137,13 +137,13 @@ class Entity:
 
 
     def __repr__(self):
-        return f"Entity(\"{self.name}\", \"tags\": \"[{','.join([t.name for t in self.tags])}]\")"
+        return f"person(\"{self.name}\", \"tags\": \"[{','.join([t.name for t in self.tags])}]\")"
 
 
     @classmethod
     def init_database(cls):
         sql = """
-              CREATE TABLE IF NOT EXISTS entities (
+              CREATE TABLE IF NOT EXISTS persons (
                   id BIGSERIAL PRIMARY KEY,
                   name TEXT NOT NULL,
                   created_at TIMESTAMP DEFAULT NOW(),
@@ -158,10 +158,10 @@ class Entity:
 class Embedding:
     """
     Embeddings are stored in a Postgres table.
-    The embedding has a vector of 4096 floats and a reference to an entity.
+    The embedding has a vector of 4096 floats and a reference to a person.
     """
-    def __init__(self, entity_id, embedding):
-        self.entity_id = entity_id
+    def __init__(self, person_id, embedding):
+        self.person_id = person_id
         self.embedding = embedding
 
 
@@ -172,7 +172,7 @@ class Embedding:
         sql = """
               CREATE TABLE IF NOT EXISTS embeddings (
                   id BIGSERIAL PRIMARY KEY,
-                  entity_id BIGSERIAL NOT NULL REFERENCES entities (id),
+                  person_id BIGSERIAL NOT NULL REFERENCES persons (id),
                   embedding VECTOR(4096) NOT NULL
               );
               """
@@ -183,10 +183,10 @@ class Embedding:
 
     def store(self):
         sql = """
-              INSERT INTO embeddings (entity_id, embedding)
+              INSERT INTO embeddings (person_id, embedding)
               VALUES (%s, %s);
               """
-        sql_data = (self.entity_id, self.embedding)
+        sql_data = (self.person_id, self.embedding)
         with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 cur.execute(sql, sql_data)
@@ -198,24 +198,24 @@ def get_cos_distance(embedding, tags, threshold=0.3):
                      ents.name,
                      1 - (embedding <=> %s) AS cosine_similarity 
               FROM (
-                  SELECT DISTINCT (entities.id),
-                         entities.name AS name
+                  SELECT DISTINCT (persons.id),
+                         persons.name AS name
                   FROM tags
-                  JOIN entities
-                  ON entities.id = tags.entity_id
+                  JOIN persons
+                  ON persons.id = tags.person_id
                   WHERE tags.name = ANY(%s)
               ) AS ents 
               JOIN embeddings
-              ON ents.id = embeddings.entity_id
+              ON ents.id = embeddings.person_id
               WHERE 1 - (embedding <=> %s) > %s;
               """
     sql_notag = """
-                SELECT entities.id AS id,
-                       entities.name AS name,
+                SELECT persons.id AS id,
+                       persons.name AS name,
                        1 - (embedding <=> %s) AS cosine_similarity
                 FROM embeddings
-                RIGHT JOIN entities
-                ON embeddings.entity_id = entities.id
+                RIGHT JOIN persons
+                ON embeddings.person_id = persons.id
                 WHERE 1 - (embedding <=> %s) > %s;
                 """
     str_rep = "[" + ",".join(str(i) for i in embedding) + "]"

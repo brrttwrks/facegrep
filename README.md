@@ -29,22 +29,22 @@ facegrep init
 facegrep --help
 ```
 
-### Add entity to pgvector database for searching
+### Add person to pgvector database for searching
 
 ```sh
-facegrep entity add path/to/image.png
+facegrep person add path/to/image.png
 ```
 
-Optionally, you can  tag the entity for the option to filter search by tag(s)
+Optionally, you can  tag the person for the option to filter search by tag(s)
 
 ```sh
-facegrep entity add path/to/image.png -t occrp
+facegrep person add path/to/image.png -t occrp
 ```
 
-### List all entities you have in your pgvector database
+### List all persons you have in your pgvector database
 
 ```sh
-facegrep entity list
+facegrep person list
 ```
 
 This returns JSONL new-line delimited objects you can do things with. Like use with jq.
@@ -52,19 +52,19 @@ This returns JSONL new-line delimited objects you can do things with. Like use w
 ### Search an image for matches against your pgvector database
 
 ```sh
-facegrep entity search path/to/image.png
+facegrep person search path/to/image.png
 ```
 
-Optionally, you can filter the search to only search for entities containing one or more tags.
+Optionally, you can filter the search to only search for persons containing one or more tags.
 
 ```sh
-facegrep entity search path/to/image.png -t occrp -t fraud_factory
+facegrep person search path/to/image.png -t occrp -t fraud_factory
 ```
 
 This stores any matches found into a report and returns a report ID you can use to list the records of the report.
 
 ```sh
-facegrep report export -r $(facegrep entity search path/to/image.png)
+facegrep report export -r $(facegrep person search path/to/image.png)
 ```
 
 You can also just list all the reports.
