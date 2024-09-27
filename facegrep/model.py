@@ -17,6 +17,11 @@ class Neo4j:
 
 
 class Tag:
+    """
+    Tags are stored in a Postgres table.
+    A tag has a name and a reference to an entity.
+    An entity can have multiple tags, but they must be unique within the entity.
+    """
     def __init__(self, entity_id, name):
         self.entity_id = entity_id
         self.name = name
@@ -39,6 +44,7 @@ class Tag:
 
 
     def store(self):
+        """Stores a tag in the database, if it doesn't already exist"""
         sql = """
               INSERT INTO tags (entity_id, name) VALUES (%s, %s);
               """
@@ -52,6 +58,10 @@ class Tag:
 
 
 class Entity:
+    """
+    Entities are stored in a Postgres table.
+    An entity has a name and a list of embeddings.
+    """
     def __init__(self, name, tag, id=None ):
         self.id = id
         self.name = name
@@ -79,7 +89,7 @@ class Entity:
         with psycopg.connect(FACEGREP_POSTGRES_URI) as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 record = cur.execute(sql, sql_data).fetchone()
-        entity = cls__init__(record["id"], record["name"])
+        entity = cls.__init__(record["id"], record["name"])
         return entity
 
 
@@ -146,6 +156,10 @@ class Entity:
 
 
 class Embedding:
+    """
+    Embeddings are stored in a Postgres table.
+    The embedding has a vector of 4096 floats and a reference to an entity.
+    """
     def __init__(self, entity_id, embedding):
         self.entity_id = entity_id
         self.embedding = embedding
@@ -153,6 +167,7 @@ class Embedding:
 
     @classmethod
     def init_database(cls):
+        """Loads the pg-vector extension into Postgres and creates the embeddings table"""
         sql_ext = "CREATE EXTENSION IF NOT EXISTS vector"
         sql = """
               CREATE TABLE IF NOT EXISTS embeddings (
