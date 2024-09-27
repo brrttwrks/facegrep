@@ -38,6 +38,7 @@ class File(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     hash = Column("hash", Text)
+<<<<<<< HEAD
     filetags: Mapped[list["FileTag"]] = relationship(
         secondary=file_tag_assoc_table,
         back_populates = "files",
@@ -78,6 +79,6 @@ class Person(Base):
 if __name__ == "__main__":
     engine = create_engine(FACEGREP_POSTGRES_URI, echo=True)
     with engine.connect() as conn:
-        sql = "CREATE EXTENSION IF NOT EXISTS `1vector;"
+        sql = "CREATE EXTENSION IF NOT EXISTS vector;"
         con.execute(statement)
     Base.metadata.create_all(engine)
