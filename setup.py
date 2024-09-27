@@ -19,6 +19,8 @@ setuptools.setup(
         "alephclient",
         "followthemoney",
         "requests",
+        "sqlalchemy",
+        "pgvector"
     ],
     entry_points={
         'console_scripts': [
