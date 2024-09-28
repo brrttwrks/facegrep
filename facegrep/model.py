@@ -11,7 +11,8 @@ from sqlalchemy import Table
 from sqlalchemy import ForeignKey
 from sqlalchemy.types import Text
 from pgvector.sqlalchemy import Vector
-
+from sqlalchemy import text
+from typing import Optional
 
 class Base(DeclarativeBase):
     pass
@@ -64,8 +65,8 @@ class Embedding(Base):
     file_path = Column(Text)
     file_id: Mapped[int] = mapped_column(ForeignKey("files.id"))
     file: Mapped["File"] = relationship(back_populates="embeddings")
-    person_id: Mapped[int] = mapped_column(ForeignKey("persons.id"))
-    person: Mapped["Person"] = relationship(back_populates="embeddings")
+    person_id: Mapped[Optional[int]] = mapped_column(ForeignKey("persons.id"))
+    person: Mapped[Optional["Person"]] = relationship(back_populates="embeddings")
 
 
 class Person(Base):
@@ -73,12 +74,12 @@ class Person(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name = Column("name", Text)
-    embeddings: Mapped[Optional["Embedding"]] = relationship()
+    embeddings: Mapped[list["Embedding"]] = relationship(back_populates="person")
 
 
 if __name__ == "__main__":
     engine = create_engine(FACEGREP_POSTGRES_URI, echo=True)
     with engine.connect() as conn:
         sql = "CREATE EXTENSION IF NOT EXISTS vector;"
-        con.execute(statement)
+        conn.execute(text(sql))
     Base.metadata.create_all(engine)
