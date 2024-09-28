@@ -38,7 +38,6 @@ class File(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     hash = Column("hash", Text)
-<<<<<<< HEAD
     filetags: Mapped[list["FileTag"]] = relationship(
         secondary=file_tag_assoc_table,
         back_populates = "files",
@@ -62,6 +61,7 @@ class Embedding(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     embedding = Column(Vector(4096))
+    file_path = Column(Text)
     file_id: Mapped[int] = mapped_column(ForeignKey("files.id"))
     file: Mapped["File"] = relationship(back_populates="embeddings")
     person_id: Mapped[int] = mapped_column(ForeignKey("persons.id"))
@@ -73,7 +73,7 @@ class Person(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name = Column("name", Text)
-    embeddings: Mapped[list["Embedding"]] = relationship()
+    embeddings: Mapped[Optional["Embedding"]] = relationship()
 
 
 if __name__ == "__main__":
