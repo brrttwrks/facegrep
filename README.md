@@ -102,4 +102,3 @@ facegrep report export -r 42 -o neo4j
 ```
 
 This will write the matched person and the source as nodes and the relationship between them as an edge. On a good day, this will enable you to see if someone is related to another person directly or indirectly via other people in images. You'll kneed to add set the env variables to connect to your neo4j database, as described in the settings.py file.
-
