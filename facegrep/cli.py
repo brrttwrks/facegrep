@@ -1,7 +1,7 @@
 from .api import database_init
-from .api import entity_add
-from .api import entity_search
-from .api import entity_list
+from .api import person_add
+from .api import person_search
+from .api import person_list
 from .api import aleph_search
 from .api import aleph_crawl
 from .api import report_list
@@ -23,8 +23,8 @@ def init():
 
 
 @cli.group()
-def entity():
-    """ Entity operations """
+def person():
+    """ person operations """
     pass
 
 
@@ -51,28 +51,28 @@ def crawl(foreign_id, tag, workers):
     aleph_crawl(report, tag, workers)
 
 
-@entity.command()
+@person.command()
 @click.argument("file_path", type=click.Path(exists=True))
 @click.option('--tag', '-t', multiple=True)
 def add(file_path, tag):
-    """ Add new entity or new embedding """
+    """ Add new person or new embedding """
     file_path = Path(file_path)
-    entity_add(file_path, tag)
+    person_add(file_path, tag)
 
 
-@entity.command()
+@person.command()
 def list():
     """ List all entities in database """
-    entity_list()
+    person_list()
 
 
-@entity.command()
+@person.command()
 @click.argument("file_path", type=click.Path(exists=True))
 @click.option('--tag', '-t', multiple=True)
 def search(file_path, tag):
     """ Compare image faces against database """
     report = Report(file_path, tag, ReportType.Entity)
-    entity_search(report, file_path, file_path)
+    person_search(report, file_path, file_path)
 
 @cli.group()
 def report():

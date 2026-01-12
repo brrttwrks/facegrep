@@ -4,7 +4,7 @@ import multiprocessing as mp
 from .model import (
     Report,
     Record,
-    Entity,
+    Person,
     Embedding,
     Neo4j,
     Tag,
@@ -23,7 +23,7 @@ api = AlephAPI()
 def database_init():
     Report.init_database()
     Record.init_database()
-    Entity.init_database()
+    Person.init_database()
     Embedding.init_database()
     Tag.init_database()
 
@@ -47,28 +47,28 @@ def get_name(file_stem):
     return file_stem.replace("_", " ").title()
 
 
-def entity_add(file_path, tags):
-    entity_name = get_name(file_path.stem)
-    entity = Entity(entity_name, tags)
+def person_add(file_path, tags):
+    person_name = get_name(file_path.stem)
+    person = Person(person_name, tags)
     embeddings = embeddings_make(file_path)
-    entity.add_embedding(embeddings[0]["embedding"])
-    print(f"Added entity: {entity.name} | tags: [{','.join(tags)}]")
+    person.add_embedding(embeddings[0]["embedding"])
+    print(f"Added person: {person.name} | tags: [{','.join(tags)}]")
 
 
-def entity_search(report, file_path, source):
+def person_search(report, file_path, source):
     file_path = Path(file_path)
     try:
         embeddings = embeddings_make(file_path)
         for embedding in embeddings:
-            entities = get_cos_distance(embedding["embedding"], report.tags)
-            if len(entities) >= 1:
-                for entity in entities:
+            persons = get_cos_distance(embedding["embedding"], report.tags)
+            if len(persons) >= 1:
+                for person in persons:
                     record = Record(
                         report.id,
                         str(file_path),
                         source,
-                        entity["name"],
-                        entity["cosine_similarity"],
+                        person["name"],
+                        person["cosine_similarity"],
                     )
                     if record in report.records:
                         continue
@@ -109,7 +109,7 @@ def aleph_search(report, entity_id):
     url = entity["links"]["file"]
     file_name = entity["properties"]["fileName"][0]
     file_path = download_file(url, file_name)
-    entity_search(report, file_path, entity_id)
+    person_search(report, file_path, entity_id)
 
 
 def aleph_crawl(report, tag, worker_count):
@@ -146,10 +146,10 @@ def aleph_crawl(report, tag, worker_count):
         [w.join() for w in workers]
 
 
-def entity_list():
-    for entity in Entity.get_entities():
-        entity["created_at"] = entity["created_at"].strftime("%Y-%m-%d")
-        click.echo(json.dumps(entity))
+def person_list():
+    for person in Person.get_persons():
+        person["created_at"] = person["created_at"].strftime("%Y-%m-%d")
+        click.echo(json.dumps(person))
 
 
 def report_list():
