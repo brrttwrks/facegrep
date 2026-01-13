@@ -1,0 +1,6 @@
+deepface
+pgvector
+psycopg2-binary
+requests
+sqlalchemy
+tf-keras
